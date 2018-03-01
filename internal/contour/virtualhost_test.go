@@ -545,7 +545,8 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			tr := &Translator{
-				FieldLogger: log,
+				FieldLogger:      log,
+				IngressClassName: DefaultIngressClassName,
 			}
 			tr.recomputevhost(tc.vhost, tc.ingresses)
 			got := tr.VirtualHostCache.HTTP.Values()

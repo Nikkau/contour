@@ -191,7 +191,8 @@ func TestGRPCStreaming(t *testing.T) {
 	for name, fn := range tests {
 		t.Run(name, func(t *testing.T) {
 			tr = &contour.Translator{
-				FieldLogger: log,
+				FieldLogger:      log,
+				IngressClassName: contour.DefaultIngressClassName,
 			}
 			srv := NewAPI(log, tr)
 			var err error
@@ -270,7 +271,8 @@ func TestGRPCFetching(t *testing.T) {
 	for name, fn := range tests {
 		t.Run(name, func(t *testing.T) {
 			tr := &contour.Translator{
-				FieldLogger: log,
+				FieldLogger:      log,
+				IngressClassName: contour.DefaultIngressClassName,
 			}
 			srv := NewAPI(log, tr)
 			var err error

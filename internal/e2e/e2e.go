@@ -50,7 +50,8 @@ func setup(t *testing.T) (cache.ResourceEventHandler, *grpc.ClientConn, func()) 
 	log.Out = &testWriter{t}
 
 	tr := &contour.Translator{
-		FieldLogger: log,
+		FieldLogger:      log,
+		IngressClassName: contour.DefaultIngressClassName,
 	}
 
 	l, err := net.Listen("tcp", "127.0.0.1:0")

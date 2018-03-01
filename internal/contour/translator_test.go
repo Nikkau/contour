@@ -120,7 +120,8 @@ func TestTranslatorAddService(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			tr := &Translator{
-				FieldLogger: log,
+				FieldLogger:      log,
+				IngressClassName: DefaultIngressClassName,
 			}
 			tr.OnAdd(tc.svc)
 			got := tr.ClusterCache.Values()
@@ -186,7 +187,8 @@ func TestTranslatorUpdateService(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			tr := &Translator{
-				FieldLogger: log,
+				FieldLogger:      log,
+				IngressClassName: DefaultIngressClassName,
 			}
 			tr.OnAdd(tc.oldObj)
 			tr.OnUpdate(tc.oldObj, tc.newObj)
@@ -268,7 +270,8 @@ func TestTranslatorRemoveService(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			tr := &Translator{
-				FieldLogger: log,
+				FieldLogger:      log,
+				IngressClassName: DefaultIngressClassName,
 			}
 			tc.setup(tr)
 			tr.OnDelete(tc.svc)
@@ -330,7 +333,8 @@ func TestTranslatorAddEndpoints(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			tr := &Translator{
-				FieldLogger: log,
+				FieldLogger:      log,
+				IngressClassName: DefaultIngressClassName,
 			}
 			tr.OnAdd(tc.svc)
 			tr.OnAdd(tc.ep)
@@ -444,7 +448,8 @@ func TestTranslatorRemoveEndpoints(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			tr := &Translator{
-				FieldLogger: log,
+				FieldLogger:      log,
+				IngressClassName: DefaultIngressClassName,
 			}
 			tc.setup(tr)
 			tr.OnDelete(tc.ep)
@@ -521,6 +526,51 @@ func TestTranslatorAddIngress(t *testing.T) {
 				Action: clusteraction("default/backend/80"),
 			}},
 		}},
+		ingress_https: []route.VirtualHost{},
+	}, {
+		name: "explicit custom ingress class",
+		setup: func(tr *Translator) {
+			tr.IngressClassName = "testingress"
+		},
+		ing: &v1beta1.Ingress{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "correct",
+				Namespace: "default",
+				Annotations: map[string]string{
+					"kubernetes.io/ingress.class": "testingress",
+				},
+			},
+			Spec: v1beta1.IngressSpec{
+				Backend: backend("backend", intstr.FromInt(80)),
+			},
+		},
+		ingress_http: []route.VirtualHost{{
+			Name:    "*",
+			Domains: []string{"*"},
+			Routes: []route.Route{{
+				Match:  prefixmatch("/"), // match all
+				Action: clusteraction("default/backend/80"),
+			}},
+		}},
+		ingress_https: []route.VirtualHost{},
+	}, {
+		name: "explicit incorrect custom ingress class",
+		setup: func(tr *Translator) {
+			tr.IngressClassName = "badingress"
+		},
+		ing: &v1beta1.Ingress{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "correct",
+				Namespace: "default",
+				Annotations: map[string]string{
+					"kubernetes.io/ingress.class": "goodingress",
+				},
+			},
+			Spec: v1beta1.IngressSpec{
+				Backend: backend("backend", intstr.FromInt(80)),
+			},
+		},
+		ingress_http:  []route.VirtualHost{}, // expected to be empty, the ingress class is ingnored
 		ingress_https: []route.VirtualHost{},
 	}, {
 		name: "name based vhost",
@@ -1020,7 +1070,8 @@ func TestTranslatorAddIngress(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			tr := &Translator{
-				FieldLogger: log,
+				FieldLogger:      log,
+				IngressClassName: DefaultIngressClassName,
 			}
 			if tc.setup != nil {
 				tc.setup(tr)
@@ -1133,7 +1184,8 @@ func TestTranslatorRemoveIngress(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			tr := &Translator{
-				FieldLogger: log,
+				FieldLogger:      log,
+				IngressClassName: DefaultIngressClassName,
 			}
 			tc.setup(tr)
 			tr.OnDelete(tc.ing)

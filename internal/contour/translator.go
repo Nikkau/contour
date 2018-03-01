@@ -30,6 +30,10 @@ import (
 	"k8s.io/client-go/tools/cache"
 )
 
+// DefaultIngressClassName is the default "kubernetes.io/ingress.class" annotation
+// value Contour will catch if no other name is provided at runtime.
+const DefaultIngressClassName string = "contour"
+
 type metadata struct {
 	name, namespace string
 }
@@ -46,7 +50,8 @@ type Translator struct {
 	ListenerCache
 	VirtualHostCache
 
-	cache translatorCache
+	cache            translatorCache
+	IngressClassName string
 }
 
 func (t *Translator) OnAdd(obj interface{}) {
@@ -141,7 +146,7 @@ func (t *Translator) removeEndpoints(e *v1.Endpoints) {
 
 func (t *Translator) addIngress(i *v1beta1.Ingress) {
 	class, ok := i.Annotations["kubernetes.io/ingress.class"]
-	if ok && class != "contour" {
+	if ok && class != t.IngressClassName {
 		// if there is an ingress class set, but it is not set to "contour"
 		// ignore this ingress.
 		// TODO(dfc) we should also skip creating any cluster backends,
@@ -173,7 +178,7 @@ func (t *Translator) addIngress(i *v1beta1.Ingress) {
 
 func (t *Translator) removeIngress(i *v1beta1.Ingress) {
 	class, ok := i.Annotations["kubernetes.io/ingress.class"]
-	if ok && class != "contour" {
+	if ok && class != t.IngressClassName {
 		// if there is an ingress class set, but it is not set to "contour"
 		// ignore this ingress.
 		// TODO(dfc) we should also skip creating any cluster backends,
